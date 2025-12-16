@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: GuidaGG/decap-nuxtcontent
+  repo: GuidaGG/BG-website
   branch: main
 
 media_folder: "public/uploads"
