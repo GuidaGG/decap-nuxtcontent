@@ -1,0 +1,29 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+      - run: npm run generate
+      - name: Upload static site via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local_path: './.output/public/*'
+          remote_path: '/wb-cms/'
+          sftp_only: true
+
+

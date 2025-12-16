@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Manager</title>
+    <!-- Include the script that enables Netlify Identity on this page. -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  </head>
+  <body>
+
+
+    <!-- Include the script that builds the page and powers Decap CMS -->
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    
+
+    <script>
+      var createClass = window.createClass;
+      
+      // Register font styling
+      CMS.registerPreviewStyle(`
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 24px;
+        }
+      `, { raw: true });
+      
+      // Simple preview that shows all content
+      var ContentPreview = createClass({
+        render: function() {
+          var props = this.props;
+          var entry = props.entry;
+          var data = entry.toJS().data;
+          var h = window.h;
+          
+          var children = [];
+          
+          // Show title and metadata (for projects)
+          if (data.title) {
+            children.push(h('h1', {style: {fontSize: '2.25rem', marginBottom: '1rem'}}, data.title));
+          }
+          
+          if (data.description) {
+            children.push(h('p', {style: {fontSize: '1.25rem', color: '#374151', marginBottom: '0.5rem'}}, data.description));
+          }
+          
+          // Date and category in a flex row
+          if (data.date || data.category) {
+            var metaChildren = [];
+            if (data.date) {
+              var dateStr = new Date(data.date).toLocaleDateString();
+              metaChildren.push(h('span', {style: {fontSize: '0.875rem'}}, dateStr));
+            }
+            if (data.category) {
+              metaChildren.push(h('span', {
+                style: {
+                  fontSize: '0.875rem',
+                  border: '2px solid black',
+                  borderRadius: '9999px',
+                  padding: '0 1rem'
+                }
+              }, data.category));
+            }
+            children.push(h('div', {
+              style: {
+                display: 'flex',
+                gap: '1rem',
+                paddingTop: '0.5rem',
+                marginBottom: '2.5rem'
+              }
+            }, metaChildren));
+          }
+          
+          if (data.tagline) children.push(h('p', {style: {marginBottom: '1rem'}}, 'Tagline: ' + data.tagline));
+          
+          // Show sections
+          if (data.sections && data.sections.length > 0) {
+            data.sections.forEach(function(section, idx) {
+              if (section.type === 'hero') {
+                // Hero section - similar to Hero.vue
+                children.push(
+                  h('section', {
+                    key: idx,
+                    style: {
+                      position: 'relative',
+                      marginBottom: '80px'
+                    }
+                  }, [
+                    h('div', {
+                      style: {
+                        width: '100%',
+                        overflow: 'hidden',
+                        maxHeight: '50vh'
+                      }
+                    }, section.image && h('img', {
+                      src: section.image,
+                      style: {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'bottom'
+                      }
+                    })),
+                    h('div', {
+                      style: {
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        textAlign: 'center',
+                        color: 'white'
+                      }
+                    }, [
+                      section.heading && h('h1', {style: {fontSize: '3rem', marginBottom: '1rem'}}, section.heading),
+                      section.subheading && h('p', {style: {fontSize: '1.5rem'}}, section.subheading)
+                    ])
+                  ])
+                );
+              } else if (section.type === 'text') {
+                // Text section - similar to Text.vue
+                children.push(
+                  h('section', {
+                    key: idx,
+                    style: {
+                      padding: '0 80px',
+                      margin: '0 auto 80px',
+                      maxWidth: '1200px'
+                    }
+                  }, [
+                    section.heading && h('h2', {style: {fontSize: '2rem', marginBottom: '1rem'}}, section.heading),
+                    section.content && h('div', {
+                      style: {lineHeight: '1.7'},
+                      dangerouslySetInnerHTML: {__html: section.content}
+                    })
+                  ])
+                );
+              } else if (section.type === 'gallery') {
+                // Gallery section - similar to Gallery.vue
+                var galleryImages = [];
+                if (section.images && section.images.length > 0) {
+                  section.images.forEach(function(img, imgIdx) {
+                    galleryImages.push(
+                      h('div', {
+                        key: imgIdx,
+                        style: {
+                          width: '33.333%',
+                          backgroundColor: '#fee',
+                          aspectRatio: '1/1'
+                        }
+                      }, h('img', {
+                        src: img,
+                        style: {
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }
+                      }))
+                    );
+                  });
+                }
+                children.push(
+                  h('section', {
+                    key: idx,
+                    style: {
+                      display: 'flex',
+                      gap: '4px',
+                      marginBottom: '80px'
+                    }
+                  }, galleryImages)
+                );
+              }
+            });
+          }
+          
+          // Show body if exists (for projects)
+          if (data.body) {
+            children.push(h('div', {
+              style: {
+                marginTop: '2.5rem',
+                lineHeight: '1.75',
+                fontSize: '1.125rem',
+                maxWidth: 'none'
+              },
+              dangerouslySetInnerHTML: {__html: data.body}
+            }));
+          }
+          
+          return h('div', {style: {padding: '5rem'}}, children);
+        }
+      });
+      
+      CMS.registerPreviewTemplate('content', ContentPreview);
+      CMS.registerPreviewTemplate('projects', ContentPreview);
+      
+      // Add deploy button only after Netlify Identity login
+      function addDeployButton() {
+        if (document.getElementById('deploy-button-container')) return; // Prevent duplicates
+        var container = document.createElement('div');
+        container.id = 'deploy-button-container';
+        container.style.cssText = 'position: fixed; top: 5px; right: 20px; z-index: 999999;';
+        var button = document.createElement('button');
+        button.id = 'deploy-button';
+        button.innerHTML = '🚀 Deploy Site';
+        button.style.cssText = 'background: #0969da; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+        // Right-click to clear token
+        button.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          if (confirm('Clear stored GitHub token? You will need to enter it again.')) {
+            localStorage.removeItem('github_deploy_token');
+            alert('Token cleared! Click Deploy to enter a new one.');
+          }
+        });
+        var status = document.createElement('div');
+        status.id = 'deploy-status';
+        status.style.cssText = 'margin-top: 8px; font-size: 12px; text-align: center; display: none; background: white; padding: 5px; border-radius: 4px;';
+        container.appendChild(button);
+        container.appendChild(status);
+        document.body.appendChild(container);
+        // Add click handler
+        button.addEventListener('click', async function() {
+          var button = this;
+          var status = document.getElementById('deploy-status');
+          button.disabled = true;
+          button.style.opacity = '0.6';
+          button.textContent = '⏳ Deploying...';
+          status.style.display = 'block';
+          status.style.color = '#0969da';
+          status.textContent = 'Triggering workflow...';
+          try {
+            var token = localStorage.getItem('github_deploy_token');
+            if (!token) {
+              token = prompt('Enter your GitHub Personal Access Token:\n\n(Create one at: https://github.com/settings/tokens\nNeeded scopes: repo, workflow)\n\nThis will be saved locally.');
+              if (token) {
+                localStorage.setItem('github_deploy_token', token);
+              } else {
+                throw new Error('GitHub token required to deploy');
+              }
+            }
+            var response = await fetch('https://api.github.com/repos//GuidaGG/decap-nuxtcontent/dispatches', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': 'token ' + token,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                event_type: 'deploy'
+              })
+            });
+            if (response.status === 204) {
+              status.style.color = '#1a7f37';
+              status.textContent = '✅ Deployment started! Check Actions tab on GitHub.';
+              button.textContent = '✅ Deployed';
+              setTimeout(function() {
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.textContent = '🚀 Deploy Site';
+                status.style.display = 'none';
+              }, 3000);
+            } else {
+              var errorData = await response.json().catch(function() { return {}; });
+              console.error('GitHub API Error:', response.status, errorData);
+              throw new Error('Failed (' + response.status + '): ' + (errorData.message || 'Check token permissions (repo, workflow)'));
+            }
+          } catch (error) {
+            status.style.color = '#d1242f';
+            status.textContent = '❌ Error: ' + error.message;
+            button.textContent = '❌ Failed';
+            button.disabled = false;
+            button.style.opacity = '1';
+            setTimeout(function() {
+              button.textContent = '🚀 Deploy Site';
+              status.style.display = 'none';
+            }, 5000);
+          }
+        });
+      }
+
+      // Listen for Netlify Identity events and show/hide deploy button
+      window.addEventListener('load', function() {
+        function checkIdentityAndShowButton() {
+          var identity = window.netlifyIdentity;
+          if (identity && identity.currentUser()) {
+            addDeployButton();
+          } else {
+            var btn = document.getElementById('deploy-button-container');
+            if (btn) btn.remove();
+          }
+        }
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.on('login', checkIdentityAndShowButton);
+          window.netlifyIdentity.on('logout', checkIdentityAndShowButton);
+          checkIdentityAndShowButton();
+        } else {
+          // Wait for Netlify Identity to load
+          var idInterval = setInterval(function() {
+            if (window.netlifyIdentity) {
+              clearInterval(idInterval);
+              window.netlifyIdentity.on('login', checkIdentityAndShowButton);
+              window.netlifyIdentity.on('logout', checkIdentityAndShowButton);
+              checkIdentityAndShowButton();
+            }
+          }, 300);
+        }
+      });
+    </script>
+  </body>
+</html>

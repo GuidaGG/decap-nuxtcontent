@@ -1,0 +1,100 @@
+backend:
+  name: github
+  repo: GuidaGG/decap-nuxtcontent
+  branch: main
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+
+collections:
+  - name: "content"
+    label: "Content"
+    folder: "content"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Tagline", name: "tagline", widget: "string", required: false }
+      - { label: "Button Text", name: "buttonText", widget: "string", required: false }
+      - { label: "Button Link", name: "buttonLink", widget: "string", required: false }
+      - { label: "Date", name: "date", widget: "datetime", required: false }
+      - { label: "Category", name: "category", widget: "string", required: false }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - label: "Sections"
+        name: "sections"
+        widget: "list"
+        required: false
+        types:
+          - label: "Hero"
+            name: "hero"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "hero" }
+              - { label: "Heading", name: "heading", widget: "string", required: false }
+              - { label: "Subheading", name: "subheading", widget: "string", required: false }
+              - { label: "Image", name: "image", widget: "image", required: false }
+          - label: "Text"
+            name: "text"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "text" }
+              - { label: "Heading", name: "heading", widget: "string", required: false }
+              - { label: "Content", name: "content", widget: "markdown", required: false }
+          - label: "Gallery"
+            name: "gallery"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "gallery" }
+              - label: "Images"
+                name: "images"
+                widget: "list"
+                required: false
+                field:
+                  { label: "Image", name: "image", widget: "image" }
+
+  - name: "projects"
+    label: "Projects"
+    folder: "content/projects"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Tagline", name: "tagline", widget: "string", required: false }
+      - { label: "Button Text", name: "buttonText", widget: "string", required: false }
+      - { label: "Button Link", name: "buttonLink", widget: "string", required: false }
+      - { label: "Date", name: "date", widget: "datetime", required: false }
+      - { label: "Category", name: "category", widget: "string", required: false }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Body", name: "body", widget: "markdown", required: false }
+      - label: "Sections"
+        name: "sections"
+        widget: "list"
+        required: false
+        types:
+          - label: "Hero"
+            name: "hero"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "hero" }
+              - { label: "Heading", name: "heading", widget: "string", required: false }
+              - { label: "Subheading", name: "subheading", widget: "string", required: false }
+              - { label: "Image", name: "image", widget: "image", required: false }
+          - label: "Text"
+            name: "text"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "text" }
+              - { label: "Heading", name: "heading", widget: "string", required: false }
+              - { label: "Content", name: "content", widget: "markdown", required: false }
+          - label: "Gallery"
+            name: "gallery"
+            widget: "object"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "gallery" }
+              - label: "Images"
+                name: "images"
+                widget: "list"
+                required: false
+                field:
+                  { label: "Image", name: "image", widget: "image" }
