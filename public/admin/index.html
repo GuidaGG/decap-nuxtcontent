@@ -192,116 +192,104 @@
       CMS.registerPreviewTemplate('content', ContentPreview);
       CMS.registerPreviewTemplate('projects', ContentPreview);
       
-      // Add deploy button only after Netlify Identity login
-      function addDeployButton() {
-        if (document.getElementById('deploy-button-container')) return; // Prevent duplicates
-        var container = document.createElement('div');
-        container.id = 'deploy-button-container';
-        container.style.cssText = 'position: fixed; top: 5px; right: 20px; z-index: 999999;';
-        var button = document.createElement('button');
-        button.id = 'deploy-button';
-        button.innerHTML = '🚀 Deploy Site';
-        button.style.cssText = 'background: #0969da; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
-        // Right-click to clear token
-        button.addEventListener('contextmenu', function(e) {
-          e.preventDefault();
-          if (confirm('Clear stored GitHub token? You will need to enter it again.')) {
-            localStorage.removeItem('github_deploy_token');
-            alert('Token cleared! Click Deploy to enter a new one.');
-          }
-        });
-        var status = document.createElement('div');
-        status.id = 'deploy-status';
-        status.style.cssText = 'margin-top: 8px; font-size: 12px; text-align: center; display: none; background: white; padding: 5px; border-radius: 4px;';
-        container.appendChild(button);
-        container.appendChild(status);
-        document.body.appendChild(container);
-        // Add click handler
-        button.addEventListener('click', async function() {
-          var button = this;
-          var status = document.getElementById('deploy-status');
-          button.disabled = true;
-          button.style.opacity = '0.6';
-          button.textContent = '⏳ Deploying...';
-          status.style.display = 'block';
-          status.style.color = '#0969da';
-          status.textContent = 'Triggering workflow...';
-          try {
-            var token = localStorage.getItem('github_deploy_token');
-            if (!token) {
-              token = prompt('Enter your GitHub Personal Access Token:\n\n(Create one at: https://github.com/settings/tokens\nNeeded scopes: repo, workflow)\n\nThis will be saved locally.');
-              if (token) {
-                localStorage.setItem('github_deploy_token', token);
-              } else {
-                throw new Error('GitHub token required to deploy');
-              }
+      // Add deploy button after page loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          // Create button container
+          var container = document.createElement('div');
+          container.id = 'deploy-button-container';
+          container.style.cssText = 'position: fixed; top: 5px; right: 20px; z-index: 999999;';
+          
+          var button = document.createElement('button');
+          button.id = 'deploy-button';
+          button.innerHTML = '🚀 Deploy Site';
+          button.style.cssText = 'background: #0969da; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+          
+          // Right-click to clear token
+          button.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            if (confirm('Clear stored GitHub token? You will need to enter it again.')) {
+              localStorage.removeItem('github_deploy_token');
+              alert('Token cleared! Click Deploy to enter a new one.');
             }
-            var response = await fetch('https://api.github.com/repos//GuidaGG/decap-nuxtcontent/dispatches', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': 'token ' + token,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                event_type: 'deploy'
-              })
-            });
-            if (response.status === 204) {
-              status.style.color = '#1a7f37';
-              status.textContent = '✅ Deployment started! Check Actions tab on GitHub.';
-              button.textContent = '✅ Deployed';
-              setTimeout(function() {
-                button.disabled = false;
-                button.style.opacity = '1';
-                button.textContent = '🚀 Deploy Site';
-                status.style.display = 'none';
-              }, 3000);
+          });
+          
+          var status = document.createElement('div');
+          status.id = 'deploy-status';
+          status.style.cssText = 'margin-top: 8px; font-size: 12px; text-align: center; display: none; background: white; padding: 5px; border-radius: 4px;';
+          
+          container.appendChild(button);
+          container.appendChild(status);
+          document.body.appendChild(container);
+          
+          console.log('Deploy button added to page');
+          
+          // Add click handler
+          button.addEventListener('click', async function() {
+        var button = this;
+        var status = document.getElementById('deploy-status');
+        
+        button.disabled = true;
+        button.style.opacity = '0.6';
+        button.textContent = '⏳ Deploying...';
+        status.style.display = 'block';
+        status.style.color = '#0969da';
+        status.textContent = 'Triggering workflow...';
+        
+        try {
+          // Get or prompt for GitHub token
+          var token = localStorage.getItem('github_deploy_token');
+          
+          if (!token) {
+            token = prompt('Enter your GitHub Personal Access Token:\n\n(Create one at: https://github.com/settings/tokens\nNeeded scopes: repo, workflow)\n\nThis will be saved locally.');
+            if (token) {
+              localStorage.setItem('github_deploy_token', token);
             } else {
-              var errorData = await response.json().catch(function() { return {}; });
-              console.error('GitHub API Error:', response.status, errorData);
-              throw new Error('Failed (' + response.status + '): ' + (errorData.message || 'Check token permissions (repo, workflow)'));
+              throw new Error('GitHub token required to deploy');
             }
-          } catch (error) {
-            status.style.color = '#d1242f';
-            status.textContent = '❌ Error: ' + error.message;
-            button.textContent = '❌ Failed';
-            button.disabled = false;
-            button.style.opacity = '1';
+          }
+          
+          // Trigger repository dispatch (webhook)
+          var response = await fetch('https://api.github.com/repos/GuidaRib/wb-cms/dispatches', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': 'token ' + token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              event_type: 'deploy'
+            })
+          });
+          
+          if (response.status === 204) {
+            status.style.color = '#1a7f37';
+            status.textContent = '✅ Deployment started! Check Actions tab on GitHub.';
+            button.textContent = '✅ Deployed';
             setTimeout(function() {
+              button.disabled = false;
+              button.style.opacity = '1';
               button.textContent = '🚀 Deploy Site';
               status.style.display = 'none';
-            }, 5000);
-          }
-        });
-      }
-
-      // Listen for Netlify Identity events and show/hide deploy button
-      window.addEventListener('load', function() {
-        function checkIdentityAndShowButton() {
-          var identity = window.netlifyIdentity;
-          if (identity && identity.currentUser()) {
-            addDeployButton();
+            }, 3000);
           } else {
-            var btn = document.getElementById('deploy-button-container');
-            if (btn) btn.remove();
+            var errorData = await response.json().catch(function() { return {}; });
+            console.error('GitHub API Error:', response.status, errorData);
+            throw new Error('Failed (' + response.status + '): ' + (errorData.message || 'Check token permissions (repo, workflow)'));
           }
+        } catch (error) {
+          status.style.color = '#d1242f';
+          status.textContent = '❌ Error: ' + error.message;
+          button.textContent = '❌ Failed';
+          button.disabled = false;
+          button.style.opacity = '1';
+          setTimeout(function() {
+            button.textContent = '🚀 Deploy Site';
+            status.style.display = 'none';
+          }, 5000);
         }
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.on('login', checkIdentityAndShowButton);
-          window.netlifyIdentity.on('logout', checkIdentityAndShowButton);
-          checkIdentityAndShowButton();
-        } else {
-          // Wait for Netlify Identity to load
-          var idInterval = setInterval(function() {
-            if (window.netlifyIdentity) {
-              clearInterval(idInterval);
-              window.netlifyIdentity.on('login', checkIdentityAndShowButton);
-              window.netlifyIdentity.on('logout', checkIdentityAndShowButton);
-              checkIdentityAndShowButton();
-            }
-          }, 300);
-        }
+          });
+        }, 1000);
       });
     </script>
   </body>
